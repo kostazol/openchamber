@@ -12,6 +12,7 @@ Own filesystem API behavior for the web server runtime, including workspace-boun
   - Registers all filesystem routes:
     - `GET /api/fs/home`
     - `POST /api/fs/mkdir`
+    - `GET /api/fs/stat`
     - `GET /api/fs/read`
     - `GET /api/fs/raw`
     - `POST /api/fs/write`
@@ -23,6 +24,7 @@ Own filesystem API behavior for the web server runtime, including workspace-boun
     - `GET /api/fs/list`
   - Owns exec job queue state (`execJobs`) and lifecycle/TTL pruning.
   - Enforces workspace boundary checks with active project + worktree fallback support.
+  - `GET /api/fs/stat` provides canonical file metadata (including `size` and `mtimeMs`) for UI change detection.
 - `createFsSearchRuntime({ fsPromises, path, spawn, resolveGitBinaryForSpawn })` from `search.js`
   - Returns `{ searchFilesystemFiles(rootPath, options) }`.
   - Supports fuzzy matching, hidden-file handling, and optional `git check-ignore` filtering.
