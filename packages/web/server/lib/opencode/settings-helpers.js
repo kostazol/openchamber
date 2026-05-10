@@ -599,6 +599,30 @@ export const createSettingsHelpers = (dependencies) => {
       }
     }
 
+    if (typeof candidate.sttProvider === 'string') {
+      const provider = candidate.sttProvider.trim();
+      if (provider === 'browser' || provider === 'server') {
+        result.sttProvider = provider;
+      }
+    }
+    if (typeof candidate.sttServerUrl === 'string') {
+      const trimmed = candidate.sttServerUrl.trim();
+      result.sttServerUrl = trimmed;
+    }
+    if (typeof candidate.sttModel === 'string') {
+      const trimmed = candidate.sttModel.trim();
+      result.sttModel = trimmed;
+    }
+    if (typeof candidate.sttLanguage === 'string') {
+      result.sttLanguage = candidate.sttLanguage.trim();
+    }
+    if (typeof candidate.sttSilenceThresholdDb === 'number' && Number.isFinite(candidate.sttSilenceThresholdDb)) {
+      result.sttSilenceThresholdDb = Math.max(-100, Math.min(0, candidate.sttSilenceThresholdDb));
+    }
+    if (typeof candidate.sttSilenceHoldMs === 'number' && Number.isFinite(candidate.sttSilenceHoldMs)) {
+      result.sttSilenceHoldMs = Math.max(250, Math.min(10000, Math.round(candidate.sttSilenceHoldMs)));
+    }
+
     return result;
   };
 
