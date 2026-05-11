@@ -25,6 +25,7 @@ import {
 import { VoiceStatusIndicator } from './VoiceStatusIndicator';
 import { toast } from '@/components/ui/toast';
 import { Icon } from "@/components/icon/Icon";
+import { useI18n } from '@/lib/i18n';
 
 // Status text for accessibility and labels
 const statusLabels: Record<string, string> = {
@@ -65,6 +66,7 @@ const normalizeVoiceErrorMessage = (error: string): string => {
  * Browser Voice Button with language selection
  */
 export function BrowserVoiceButton() {
+    const { t } = useI18n();
     const voiceModeEnabled = useConfigStore((s) => s.voiceModeEnabled);
     const sttTranscribeOnStop = useConfigStore((s) => s.sttTranscribeOnStop);
     
@@ -110,6 +112,7 @@ export function BrowserVoiceButton() {
     const isIdle = status === 'idle';
 
     const isSpeaking = status === 'speaking';
+    const isListeningWithTranscribeOnStop = status === 'listening' && sttTranscribeOnStop;
 
     // Show toast notification when voice error occurs
     useEffect(() => {
@@ -133,6 +136,8 @@ export function BrowserVoiceButton() {
     // Status text for accessibility
     const statusText = isError
         ? error || 'Voice Error'
+        : isListeningWithTranscribeOnStop
+          ? t('voice.action.finishAndTranscribe')
         : conversationMode && status === 'idle'
           ? 'Start Voice (Continuous mode on)'
           : statusLabels[status] || 'Start Voice';
@@ -141,6 +146,9 @@ export function BrowserVoiceButton() {
     const getTooltipContent = () => {
         if (isError && error) {
             return normalizeVoiceErrorMessage(error);
+        }
+        if (isListeningWithTranscribeOnStop) {
+            return t('voice.action.finishAndTranscribe');
         }
         if (isActive) {
             return 'Stop voice conversation';

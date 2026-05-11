@@ -126,18 +126,9 @@ class AudioStreamService {
 
   /** Stop listening and clean up all resources. */
   stopListening(): void {
-    this.isActive = false;
-    this.finishResolver?.();
-    this.finishResolver = null;
     this._stopVAD();
     this._stopRecorder();
-    this._teardownAudioContext();
-    this._releaseStream();
-    this.chunks = [];
-    this.isSpeaking = false;
-    this.silenceSince = null;
-    this.onResult = null;
-    this.onError = null;
+    this._cleanupAfterStop(true);
   }
 
   async finishListening(): Promise<void> {
@@ -148,10 +139,7 @@ class AudioStreamService {
     this.silenceSince = null;
 
     if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
-      this._teardownAudioContext();
-      this._releaseStream();
-      this.onResult = null;
-      this.onError = null;
+      this._cleanupAfterStop(true);
       return;
     }
 
@@ -160,11 +148,7 @@ class AudioStreamService {
       this._finaliseUtterance(false);
     });
 
-    this.isActive = false;
-    this._teardownAudioContext();
-    this._releaseStream();
-    this.onResult = null;
-    this.onError = null;
+    this._cleanupAfterStop(true);
   }
 
   /** Whether currently listening. */
@@ -295,6 +279,21 @@ class AudioStreamService {
       clearInterval(this.vadTimer);
       this.vadTimer = null;
     }
+  }
+
+  private _cleanupAfterStop(clearChunks: boolean): void {
+    this.isActive = false;
+    this.finishResolver = null;
+    this.mediaRecorder = null;
+    this._teardownAudioContext();
+    this._releaseStream();
+    if (clearChunks) {
+      this.chunks = [];
+    }
+    this.isSpeaking = false;
+    this.silenceSince = null;
+    this.onResult = null;
+    this.onError = null;
   }
 
   /** Stop the current recorder to flush the utterance, optionally restarting for the next one. */
