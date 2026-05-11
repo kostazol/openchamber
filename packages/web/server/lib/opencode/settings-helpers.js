@@ -18,6 +18,9 @@ export const createSettingsHelpers = (dependencies) => {
   } = dependencies;
 
   const PWA_APP_NAME_MAX_LENGTH = 64;
+  const STT_SERVER_URL_MAX_LENGTH = 2048;
+  const STT_MODEL_MAX_LENGTH = 256;
+  const STT_LANGUAGE_MAX_LENGTH = 64;
   const PWA_ORIENTATION_VALUES = new Set(['system', 'portrait', 'landscape']);
   const MOBILE_KEYBOARD_MODE_VALUES = new Set(['native', 'resize-content']);
 
@@ -607,14 +610,21 @@ export const createSettingsHelpers = (dependencies) => {
     }
     if (typeof candidate.sttServerUrl === 'string') {
       const trimmed = candidate.sttServerUrl.trim();
-      result.sttServerUrl = trimmed;
+      if (trimmed.length <= STT_SERVER_URL_MAX_LENGTH) {
+        result.sttServerUrl = trimmed;
+      }
     }
     if (typeof candidate.sttModel === 'string') {
       const trimmed = candidate.sttModel.trim();
-      result.sttModel = trimmed;
+      if (trimmed.length <= STT_MODEL_MAX_LENGTH) {
+        result.sttModel = trimmed;
+      }
     }
     if (typeof candidate.sttLanguage === 'string') {
-      result.sttLanguage = candidate.sttLanguage.trim();
+      const trimmed = candidate.sttLanguage.trim();
+      if (trimmed.length <= STT_LANGUAGE_MAX_LENGTH) {
+        result.sttLanguage = trimmed;
+      }
     }
     if (typeof candidate.sttSilenceThresholdDb === 'number' && Number.isFinite(candidate.sttSilenceThresholdDb)) {
       result.sttSilenceThresholdDb = Math.max(-100, Math.min(0, candidate.sttSilenceThresholdDb));

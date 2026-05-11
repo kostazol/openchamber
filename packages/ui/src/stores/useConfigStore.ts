@@ -17,11 +17,29 @@ import { parseModelIdentifier } from "@/lib/modelIdentifier";
 
 const MODELS_DEV_API_URL = "https://models.dev/api.json";
 const MODELS_DEV_PROXY_URL = "/api/openchamber/models-metadata";
+const STT_SILENCE_THRESHOLD_DB_MIN = -100;
+const STT_SILENCE_THRESHOLD_DB_MAX = 0;
+const STT_SILENCE_HOLD_MS_MIN = 250;
+const STT_SILENCE_HOLD_MS_MAX = 10000;
 
 const FALLBACK_PROVIDER_ID = "opencode";
 const FALLBACK_MODEL_ID = "big-pickle";
 const GIT_UTILITY_PROVIDER_ID = "zen";
 const GIT_UTILITY_PREFERRED_MODEL_ID = "big-pickle";
+
+const normalizeSttSilenceThresholdDb = (value: unknown): number | undefined => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return undefined;
+    }
+    return Math.max(STT_SILENCE_THRESHOLD_DB_MIN, Math.min(STT_SILENCE_THRESHOLD_DB_MAX, value));
+};
+
+const normalizeSttSilenceHoldMs = (value: unknown): number | undefined => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return undefined;
+    }
+    return Math.max(STT_SILENCE_HOLD_MS_MIN, Math.min(STT_SILENCE_HOLD_MS_MAX, Math.round(value)));
+};
 
 interface OpenChamberDefaults {
     defaultModel?: string;
@@ -63,8 +81,8 @@ const fetchOpenChamberDefaults = async (): Promise<OpenChamberDefaults> => {
                     const sttServerUrl = typeof data?.sttServerUrl === 'string' ? data.sttServerUrl.trim() : undefined;
                     const sttModel = typeof data?.sttModel === 'string' ? data.sttModel.trim() : undefined;
                     const sttLanguage = typeof data?.sttLanguage === 'string' ? data.sttLanguage.trim() : undefined;
-                    const sttSilenceThresholdDb = typeof data?.sttSilenceThresholdDb === 'number' && Number.isFinite(data.sttSilenceThresholdDb) ? data.sttSilenceThresholdDb : undefined;
-                    const sttSilenceHoldMs = typeof data?.sttSilenceHoldMs === 'number' && Number.isFinite(data.sttSilenceHoldMs) ? data.sttSilenceHoldMs : undefined;
+                    const sttSilenceThresholdDb = normalizeSttSilenceThresholdDb(data?.sttSilenceThresholdDb);
+                    const sttSilenceHoldMs = normalizeSttSilenceHoldMs(data?.sttSilenceHoldMs);
 
                     return {
                         defaultModel: defaultModel.length > 0 ? defaultModel : undefined,
@@ -111,8 +129,8 @@ const fetchOpenChamberDefaults = async (): Promise<OpenChamberDefaults> => {
         const sttServerUrl = typeof data?.sttServerUrl === 'string' ? data.sttServerUrl.trim() : undefined;
         const sttModel = typeof data?.sttModel === 'string' ? data.sttModel.trim() : undefined;
         const sttLanguage = typeof data?.sttLanguage === 'string' ? data.sttLanguage.trim() : undefined;
-        const sttSilenceThresholdDb = typeof data?.sttSilenceThresholdDb === 'number' && Number.isFinite(data.sttSilenceThresholdDb) ? data.sttSilenceThresholdDb : undefined;
-        const sttSilenceHoldMs = typeof data?.sttSilenceHoldMs === 'number' && Number.isFinite(data.sttSilenceHoldMs) ? data.sttSilenceHoldMs : undefined;
+        const sttSilenceThresholdDb = normalizeSttSilenceThresholdDb(data?.sttSilenceThresholdDb);
+        const sttSilenceHoldMs = normalizeSttSilenceHoldMs(data?.sttSilenceHoldMs);
 
         return {
             defaultModel: defaultModel.length > 0 ? defaultModel : undefined,
