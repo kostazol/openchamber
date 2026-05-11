@@ -282,6 +282,7 @@ class AudioStreamService {
   }
 
   private _cleanupAfterStop(clearChunks: boolean): void {
+    const pendingResolver = this.finishResolver;
     this.isActive = false;
     this.finishResolver = null;
     this.mediaRecorder = null;
@@ -294,6 +295,7 @@ class AudioStreamService {
     this.silenceSince = null;
     this.onResult = null;
     this.onError = null;
+    pendingResolver?.();
   }
 
   /** Stop the current recorder to flush the utterance, optionally restarting for the next one. */

@@ -769,20 +769,20 @@ export const VoiceSettings: React.FC = () => {
                             </div>
                         </div>
 
-                        <div
-                            className="group flex cursor-pointer items-center gap-2 py-1.5"
-                            role="button"
-                            tabIndex={0}
-                            aria-pressed={sttTranscribeOnStop}
-                            onClick={() => setSttTranscribeOnStop(!sttTranscribeOnStop)}
-                            onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setSttTranscribeOnStop(!sttTranscribeOnStop); } }}
-                        >
-                            <Checkbox checked={sttTranscribeOnStop} onChange={setSttTranscribeOnStop} ariaLabel={t('settings.voice.page.field.transcribeOnStopAria')} />
-                            <span className="typography-ui-label text-foreground">{t('settings.voice.page.field.transcribeOnStop')}</span>
-                        </div>
-
                         {sttProvider === 'server' && (
                             <div className="py-1.5 space-y-2">
+                                <div
+                                    className="group flex cursor-pointer items-center gap-2 py-1.5"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-pressed={sttTranscribeOnStop}
+                                    onClick={() => setSttTranscribeOnStop(!sttTranscribeOnStop)}
+                                    onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setSttTranscribeOnStop(!sttTranscribeOnStop); } }}
+                                >
+                                    <Checkbox checked={sttTranscribeOnStop} onChange={setSttTranscribeOnStop} ariaLabel={t('settings.voice.page.field.transcribeOnStopAria')} />
+                                    <span className="typography-ui-label text-foreground">{t('settings.voice.page.field.transcribeOnStop')}</span>
+                                </div>
+
                                 {!audioStreamService.isSupported() && (
                                     <p className="typography-meta text-[var(--status-error)]">
                                         {t('settings.voice.page.field.sttBrowserSupportError')}

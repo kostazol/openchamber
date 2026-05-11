@@ -858,7 +858,7 @@ export function useBrowserVoice(): UseBrowserVoiceReturn {
           if (pendingFinalTranscriptRef.current || finalTranscriptTimerRef.current) {
             return;
           }
-          if (lastTranscriptRef.current) {
+          if (processingMessageRef.current) {
             return;
           }
           isActiveRef.current = false;
@@ -877,7 +877,7 @@ export function useBrowserVoice(): UseBrowserVoiceReturn {
       if (pendingFinalTranscriptRef.current || finalTranscriptTimerRef.current) {
         return;
       }
-      if (lastTranscriptRef.current) {
+      if (processingMessageRef.current) {
         return;
       }
       isActiveRef.current = false;
