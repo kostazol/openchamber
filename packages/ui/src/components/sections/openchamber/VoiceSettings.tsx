@@ -92,6 +92,8 @@ export const VoiceSettings: React.FC = () => {
     const setSttSilenceThresholdDb = useConfigStore((state) => state.setSttSilenceThresholdDb);
     const sttSilenceHoldMs = useConfigStore((state) => state.sttSilenceHoldMs);
     const setSttSilenceHoldMs = useConfigStore((state) => state.setSttSilenceHoldMs);
+    const sttTranscribeOnStop = useConfigStore((state) => state.sttTranscribeOnStop);
+    const setSttTranscribeOnStop = useConfigStore((state) => state.setSttTranscribeOnStop);
     const setShowMessageTTSButtons = useConfigStore((state) => state.setShowMessageTTSButtons);
     const voiceModeEnabled = useConfigStore((state) => state.voiceModeEnabled);
     const setVoiceModeEnabled = useConfigStore((state) => state.setVoiceModeEnabled);
@@ -765,6 +767,18 @@ export const VoiceSettings: React.FC = () => {
                                     </Button>
                                 </div>
                             </div>
+                        </div>
+
+                        <div
+                            className="group flex cursor-pointer items-center gap-2 py-1.5"
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={sttTranscribeOnStop}
+                            onClick={() => setSttTranscribeOnStop(!sttTranscribeOnStop)}
+                            onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setSttTranscribeOnStop(!sttTranscribeOnStop); } }}
+                        >
+                            <Checkbox checked={sttTranscribeOnStop} onChange={setSttTranscribeOnStop} ariaLabel={t('settings.voice.page.field.transcribeOnStopAria')} />
+                            <span className="typography-ui-label text-foreground">{t('settings.voice.page.field.transcribeOnStop')}</span>
                         </div>
 
                         {sttProvider === 'server' && (

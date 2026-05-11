@@ -66,6 +66,7 @@ const normalizeVoiceErrorMessage = (error: string): string => {
  */
 export function BrowserVoiceButton() {
     const voiceModeEnabled = useConfigStore((s) => s.voiceModeEnabled);
+    const sttTranscribeOnStop = useConfigStore((s) => s.sttTranscribeOnStop);
     
     const {
         status,
@@ -74,6 +75,7 @@ export function BrowserVoiceButton() {
 
         startVoice,
         stopVoice,
+        finishVoiceInput,
         conversationMode,
         toggleConversationMode,
         isMobile,
@@ -152,6 +154,10 @@ export function BrowserVoiceButton() {
     // Handle voice activation (used by both click and touch)
     const activateVoice = useCallback(async () => {
         if (isActive) {
+            if (status === 'listening' && sttTranscribeOnStop) {
+                finishVoiceInput();
+                return;
+            }
             stopVoice();
         } else if (status !== 'error') {
             // On mobile, we must NOT do any async operations before calling startVoice()
@@ -181,7 +187,7 @@ export function BrowserVoiceButton() {
                 }
             }
         }
-    }, [isActive, status, startVoice, stopVoice, isMobile]);
+    }, [isActive, status, sttTranscribeOnStop, finishVoiceInput, startVoice, stopVoice, isMobile]);
 
     // Handle Shift+Click to toggle conversation mode
     const handleClick = useCallback(async (e: React.MouseEvent) => {
