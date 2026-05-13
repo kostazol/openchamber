@@ -68,6 +68,7 @@ const normalizeVoiceErrorMessage = (error: string): string => {
 export function BrowserVoiceButton() {
     const { t } = useI18n();
     const voiceModeEnabled = useConfigStore((s) => s.voiceModeEnabled);
+    const sttProvider = useConfigStore((s) => s.sttProvider);
     const sttTranscribeOnStop = useConfigStore((s) => s.sttTranscribeOnStop);
     
     const {
@@ -112,7 +113,8 @@ export function BrowserVoiceButton() {
     const isIdle = status === 'idle';
 
     const isSpeaking = status === 'speaking';
-    const isListeningWithTranscribeOnStop = status === 'listening' && sttTranscribeOnStop;
+    const canTranscribeOnStop = sttProvider === 'server' && sttTranscribeOnStop;
+    const isListeningWithTranscribeOnStop = status === 'listening' && canTranscribeOnStop;
 
     // Show toast notification when voice error occurs
     useEffect(() => {
@@ -162,7 +164,7 @@ export function BrowserVoiceButton() {
     // Handle voice activation (used by both click and touch)
     const activateVoice = useCallback(async () => {
         if (isActive) {
-            if (status === 'listening' && sttTranscribeOnStop) {
+            if (status === 'listening' && canTranscribeOnStop) {
                 finishVoiceInput();
                 return;
             }
@@ -195,7 +197,7 @@ export function BrowserVoiceButton() {
                 }
             }
         }
-    }, [isActive, status, sttTranscribeOnStop, finishVoiceInput, startVoice, stopVoice, isMobile]);
+    }, [isActive, status, canTranscribeOnStop, finishVoiceInput, startVoice, stopVoice, isMobile]);
 
     // Handle Shift+Click to toggle conversation mode
     const handleClick = useCallback(async (e: React.MouseEvent) => {
