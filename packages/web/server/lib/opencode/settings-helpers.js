@@ -632,6 +632,9 @@ export const createSettingsHelpers = (dependencies) => {
     if (typeof candidate.sttSilenceHoldMs === 'number' && Number.isFinite(candidate.sttSilenceHoldMs)) {
       result.sttSilenceHoldMs = Math.max(250, Math.min(10000, Math.round(candidate.sttSilenceHoldMs)));
     }
+    if (typeof candidate.sttTranscribeOnStop === 'boolean') {
+      result.sttTranscribeOnStop = candidate.sttTranscribeOnStop;
+    }
 
     return result;
   };

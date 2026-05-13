@@ -1939,6 +1939,7 @@ export const useConfigStore = create<ConfigStore>()(
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('sttTranscribeOnStop', String(enabled));
                     }
+                    updateDesktopSettings({ sttTranscribeOnStop: enabled }).catch(() => {});
                 },
 
                 setShowMessageTTSButtons: (show: boolean) => {

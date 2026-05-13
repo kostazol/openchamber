@@ -114,6 +114,9 @@ const persistToLocalStorage = (settings: DesktopSettings) => {
   if (typeof settings.sttSilenceHoldMs === 'number' && Number.isFinite(settings.sttSilenceHoldMs)) {
     localStorage.setItem('sttSilenceHoldMs', String(settings.sttSilenceHoldMs));
   }
+  if (typeof settings.sttTranscribeOnStop === 'boolean') {
+    localStorage.setItem('sttTranscribeOnStop', String(settings.sttTranscribeOnStop));
+  }
 };
 
 type PersistApi = {
@@ -514,6 +517,9 @@ const applyDesktopUiPreferences = (settings: DesktopSettings) => {
     }
     if (typeof settings.sttSilenceHoldMs === 'number' && Number.isFinite(settings.sttSilenceHoldMs) && settings.sttSilenceHoldMs !== configStore.sttSilenceHoldMs) {
       nextConfigState.sttSilenceHoldMs = settings.sttSilenceHoldMs;
+    }
+    if (typeof settings.sttTranscribeOnStop === 'boolean' && settings.sttTranscribeOnStop !== configStore.sttTranscribeOnStop) {
+      nextConfigState.sttTranscribeOnStop = settings.sttTranscribeOnStop;
     }
     if (Object.keys(nextConfigState).length > 0) {
       configStoreApi.setState(nextConfigState);
@@ -1042,6 +1048,9 @@ const sanitizeWebSettings = (payload: unknown): DesktopSettings | null => {
   }
   if (typeof candidate.sttSilenceHoldMs === 'number' && Number.isFinite(candidate.sttSilenceHoldMs)) {
     result.sttSilenceHoldMs = candidate.sttSilenceHoldMs;
+  }
+  if (typeof candidate.sttTranscribeOnStop === 'boolean') {
+    result.sttTranscribeOnStop = candidate.sttTranscribeOnStop;
   }
 
   return result;

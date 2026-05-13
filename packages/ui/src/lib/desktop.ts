@@ -172,6 +172,7 @@ export type DesktopSettings = {
   sttLanguage?: string;
   sttSilenceThresholdDb?: number;
   sttSilenceHoldMs?: number;
+  sttTranscribeOnStop?: boolean;
 };
 
 type TauriGlobal = {
