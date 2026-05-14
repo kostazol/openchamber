@@ -317,6 +317,17 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
 
   React.useImperativeHandle(ref, () => ({
     handleKeyDown: (key: string) => {
+      if (key === 'ArrowLeft' || key === 'ArrowRight') {
+        const currentIndex = commandCategoryOptions.findIndex((option) => option.id === commandCategoryFilter);
+        if (currentIndex >= 0) {
+          const nextIndex = key === 'ArrowRight'
+            ? (currentIndex + 1) % commandCategoryOptions.length
+            : (currentIndex - 1 + commandCategoryOptions.length) % commandCategoryOptions.length;
+          setCommandCategoryFilter(commandCategoryOptions[nextIndex].id);
+        }
+        return;
+      }
+
       const total = commands.length;
       if (key === 'Escape') {
         onClose();
@@ -345,7 +356,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
         }
       }
     }
-  }), [commands, selectedIndex, onClose, onCommandSelect]);
+  }), [commands, selectedIndex, onClose, onCommandSelect, commandCategoryFilter, commandCategoryOptions]);
 
   const getCommandIcon = (command: CommandInfo) => {
 
