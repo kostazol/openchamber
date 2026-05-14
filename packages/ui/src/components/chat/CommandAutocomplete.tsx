@@ -9,6 +9,7 @@ import { Icon } from "@/components/icon/Icon";
 import { useI18n } from '@/lib/i18n';
 
 type CommandSource = 'openchamber' | 'opencode';
+type CommandCategoryFilter = 'all' | 'general' | 'skill' | 'system' | 'openchamber' | 'user' | 'project' | 'untagged';
 
 export interface CommandInfo {
   id: string;
@@ -28,6 +29,87 @@ export interface CommandAutocompleteHandle {
 }
 
 type AutocompleteTab = 'commands' | 'agents' | 'files';
+type TranslateFn = ReturnType<typeof useI18n>['t'];
+
+const hasCommandTag = (command: CommandInfo, filter: Exclude<CommandCategoryFilter, 'all'>): boolean => {
+  if (filter === 'skill') {
+    return command.isSkill === true;
+  }
+
+  if (filter === 'general') {
+    return command.agent === 'general';
+  }
+
+  if (filter === 'system') {
+    return command.isBuiltIn === true;
+  }
+
+  if (filter === 'openchamber') {
+    return command.isOpenChamber === true;
+  }
+
+  if (filter === 'user') {
+    return command.scope === 'user';
+  }
+
+  if (filter === 'project') {
+    return command.scope === 'project';
+  }
+
+  return command.isSkill !== true && command.isBuiltIn !== true && command.isOpenChamber !== true && command.scope !== 'user' && command.scope !== 'project' && command.agent !== 'general';
+};
+
+const matchesCommandCategory = (command: CommandInfo, filter: CommandCategoryFilter): boolean => {
+  if (filter === 'all') {
+    return true;
+  }
+
+  return hasCommandTag(command, filter);
+};
+
+interface CommandTagBadge {
+  id: Exclude<CommandCategoryFilter, 'all'>;
+  label: string;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+const getCommandTagBadges = (command: CommandInfo, t: TranslateFn): CommandTagBadge[] => {
+  const badges: CommandTagBadge[] = [];
+
+  if (command.isSkill === true) {
+    badges.push({ id: 'skill', label: t('chat.commandAutocomplete.badge.skill'), className: 'bg-[var(--status-info-background)] text-[var(--status-info)] border-[var(--status-info-border)]' });
+  }
+
+  if (command.agent === 'general') {
+    badges.push({ id: 'general', label: t('chat.commandAutocomplete.tabs.general'), className: 'bg-[var(--surface-subtle)] text-[var(--surface-foreground)] border-[var(--interactive-border)]' });
+  }
+
+  if (command.isOpenChamber === true) {
+    badges.push({
+      id: 'openchamber',
+      label: 'OpenChamber',
+      className: 'px-1.5 py-1',
+      style: {
+        backgroundColor: 'color-mix(in srgb, var(--primary-base) 14%, transparent)',
+        color: 'var(--primary-base)',
+        borderColor: 'color-mix(in srgb, var(--primary-base) 28%, transparent)',
+      },
+    });
+  }
+
+  if (command.isBuiltIn === true) {
+    badges.push({ id: 'system', label: t('chat.commandAutocomplete.badge.system'), className: 'bg-[var(--status-warning-background)] text-[var(--status-warning)] border-[var(--status-warning-border)]' });
+  }
+
+  if (command.scope === 'project') {
+    badges.push({ id: 'project', label: command.scope, className: 'bg-[var(--status-info-background)] text-[var(--status-info)] border-[var(--status-info-border)]' });
+  } else if (command.scope === 'user') {
+    badges.push({ id: 'user', label: command.scope, className: 'bg-[var(--status-success-background)] text-[var(--status-success)] border-[var(--status-success-border)]' });
+  }
+
+  return badges;
+};
 
 interface CommandAutocompleteProps {
   searchQuery: string;
@@ -50,6 +132,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
 }, ref) => {
   const { t } = useI18n();
   const currentSessionId = useSessionUIStore((state) => state.currentSessionId);
+  const getDirectoryForSession = useSessionUIStore((state) => state.getDirectoryForSession);
   const sessionMessages = useSessionMessages(currentSessionId ?? '');
   const hasMessagesInCurrentSession = sessionMessages.length > 0;
   const hasSession = Boolean(currentSessionId);
@@ -62,6 +145,8 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const refreshCommands = useCommandsStore((s) => s.loadCommands);
   const skills = useSkillsStore((s) => s.skills);
   const refreshSkills = useSkillsStore((s) => s.loadSkills);
+  const [commandCategoryFilter, setCommandCategoryFilter] = React.useState<CommandCategoryFilter>('all');
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -69,6 +154,25 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const pointerMovedRef = React.useRef(false);
   const ignoreTabClickRef = React.useRef(false);
+
+  const commandCategoryOptions = React.useMemo(() => ([
+    { id: 'all' as const, label: t('chat.commandAutocomplete.tabs.all') },
+    { id: 'general' as const, label: t('chat.commandAutocomplete.tabs.general') },
+    { id: 'openchamber' as const, label: t('chat.commandAutocomplete.tabs.openchamber') },
+    { id: 'project' as const, label: t('chat.commandAutocomplete.tabs.project') },
+    { id: 'skill' as const, label: t('chat.commandAutocomplete.tabs.skill') },
+    { id: 'system' as const, label: t('chat.commandAutocomplete.tabs.system') },
+    { id: 'untagged' as const, label: t('chat.commandAutocomplete.tabs.untagged') },
+    { id: 'user' as const, label: t('chat.commandAutocomplete.tabs.user') },
+  ]).sort((a, b) => a.label.localeCompare(b.label)), [t]);
+
+  const currentSessionDirectory = React.useMemo(() => {
+    if (!currentSessionId) {
+      return null;
+    }
+
+    return getDirectoryForSession(currentSessionId);
+  }, [currentSessionId, getDirectoryForSession]);
 
   React.useEffect(() => {
     const handlePointerDown = (event: MouseEvent | TouchEvent) => {
@@ -90,9 +194,9 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
 
   React.useEffect(() => {
     // Force refresh to get latest project context when mounting
-    void refreshCommands();
+    void refreshCommands(currentSessionDirectory);
     void refreshSkills();
-  }, [refreshCommands, refreshSkills]);
+  }, [currentSessionDirectory, refreshCommands, refreshSkills]);
 
   React.useEffect(() => {
     const loadCommands = async () => {
@@ -142,7 +246,9 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
               fuzzyMatch(cmd.name, searchQuery) ||
               (cmd.description && fuzzyMatch(cmd.description, searchQuery))
             )
-          : allCommands).filter(cmd => allowInitCommand || cmd.name !== 'init');
+          : allCommands)
+          .filter(cmd => allowInitCommand || cmd.name !== 'init')
+          .filter(cmd => matchesCommandCategory(cmd, commandCategoryFilter));
 
         filtered.sort((a, b) => {
           const aStartsWith = a.name.toLowerCase().startsWith(searchQuery.toLowerCase());
@@ -185,7 +291,9 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
               fuzzyMatch(cmd.name, searchQuery) ||
               (cmd.description && fuzzyMatch(cmd.description, searchQuery))
             )
-          : builtInCommands).filter(cmd => allowInitCommand || cmd.name !== 'init');
+          : builtInCommands)
+          .filter(cmd => allowInitCommand || cmd.name !== 'init')
+          .filter(cmd => matchesCommandCategory(cmd, commandCategoryFilter));
 
         setCommands(filtered);
       } finally {
@@ -194,7 +302,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
     };
 
     loadCommands();
-  }, [searchQuery, hasMessagesInCurrentSession, hasSession, canStartSessionCommand, commandsWithMetadata, skills, t]);
+  }, [searchQuery, hasMessagesInCurrentSession, hasSession, canStartSessionCommand, commandCategoryFilter, commandsWithMetadata, skills, t]);
 
   React.useEffect(() => {
     setSelectedIndex(0);
@@ -312,6 +420,49 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
           </div>
         </div>
       ) : null}
+      <div className="px-2 pt-2 pb-1 border-b border-border/60">
+        <div className="relative">
+          <button
+            type="button"
+            className={cn(
+              'text-foreground border border-border/80 appearance-none flex h-9 w-full min-w-0 rounded-lg bg-transparent px-3 py-1 outline-none',
+              'hover:border-input focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:border-primary/70',
+              'flex items-center gap-2 text-left'
+            )}
+            onClick={() => setIsFilterOpen((value) => !value)}
+            aria-expanded={isFilterOpen}
+          >
+            <Icon name="command" className="h-4 w-4 opacity-70" />
+            <span className="min-w-0 flex-1 truncate typography-ui-label font-medium">
+              {t(`chat.commandAutocomplete.tabs.${commandCategoryFilter}`)}
+            </span>
+            <Icon name="arrow-down-s" className="size-4 opacity-50" />
+          </button>
+          {isFilterOpen ? (
+            <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-10 overflow-hidden rounded-xl border border-border/80 bg-[var(--surface-elevated)] p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_0_0_1px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.10),0_1px_2px_-0.5px_rgba(0,0,0,0.08),0_4px_8px_-2px_rgba(0,0,0,0.08),0_12px_20px_-4px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.08),0_0_0_1px_rgba(0,0,0,0.36),0_1px_1px_-0.5px_rgba(0,0,0,0.22),0_3px_3px_-1.5px_rgba(0,0,0,0.20),0_6px_6px_-3px_rgba(0,0,0,0.16)]">
+              {commandCategoryOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left typography-ui-label outline-none',
+                    commandCategoryFilter === option.id
+                      ? 'bg-interactive-selection text-interactive-selection-foreground'
+                      : 'text-foreground hover:bg-interactive-hover'
+                  )}
+                  onClick={() => {
+                    setCommandCategoryFilter(option.id);
+                    setIsFilterOpen(false);
+                  }}
+                >
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {commandCategoryFilter === option.id ? <Icon name="check" className="size-3.5" /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
       <ScrollableOverlay outerClassName="flex-1 min-h-0" className="px-0 pb-2">
         {loading ? (
           <div className="flex items-center justify-center py-4">
@@ -320,10 +471,10 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
         ) : (
           <div>
             {commands.map((command, index) => {
-              const isSystem = command.isBuiltIn;
-              const isOpenChamberBadge = command.isOpenChamber;
-              const isProject = command.scope === 'project';
-              
+              const tagBadges = getCommandTagBadges(command, t);
+
+              const visibleTagBadges = tagBadges.filter((badge) => badge.id !== commandCategoryFilter);
+                
               return (
                 <div
                   key={command.id}
@@ -383,37 +534,16 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="typography-ui-label font-medium">/{command.name}</span>
-                      {command.isSkill ? (
-                        <span className="text-[10px] leading-none uppercase font-bold tracking-tight bg-[var(--status-info-background)] text-[var(--status-info)] border-[var(--status-info-border)] px-1.5 py-1 rounded border flex-shrink-0">
-                          {t('chat.commandAutocomplete.badge.skill')}
-                        </span>
-                      ) : null}
-                      {isOpenChamberBadge ? (
+                      {visibleTagBadges.map((badge) => (
                         <span
-                          className="text-[10px] leading-none uppercase font-bold tracking-tight px-1.5 py-1 rounded border flex-shrink-0"
-                          style={{
-                            backgroundColor: 'color-mix(in srgb, var(--primary-base) 14%, transparent)',
-                            color: 'var(--primary-base)',
-                            borderColor: 'color-mix(in srgb, var(--primary-base) 28%, transparent)',
-                          }}
+                          key={badge.id}
+                          className={cn('text-[10px] leading-none uppercase font-bold tracking-tight px-1.5 py-1 rounded border flex-shrink-0', badge.className)}
+                          style={badge.style}
                         >
-                          OpenChamber
+                          {badge.label}
                         </span>
-                      ) : isSystem ? (
-                        <span className="text-[10px] leading-none uppercase font-bold tracking-tight bg-[var(--status-warning-background)] text-[var(--status-warning)] border-[var(--status-warning-border)] px-1.5 py-1 rounded border flex-shrink-0">
-                          {t('chat.commandAutocomplete.badge.system')}
-                        </span>
-                      ) : command.scope ? (
-                        <span className={cn(
-                          "text-[10px] leading-none uppercase font-bold tracking-tight px-1.5 py-1 rounded border flex-shrink-0",
-                          isProject 
-                            ? "bg-[var(--status-info-background)] text-[var(--status-info)] border-[var(--status-info-border)]"
-                            : "bg-[var(--status-success-background)] text-[var(--status-success)] border-[var(--status-success-border)]"
-                        )}>
-                          {command.scope}
-                        </span>
-                      ) : null}
-                      {command.agent && (
+                      ))}
+                      {command.agent && command.agent !== 'general' && (
                         <span className="text-[10px] leading-none font-bold tracking-tight bg-[var(--surface-subtle)] text-[var(--surface-foreground)] border-[var(--interactive-border)] px-1.5 py-1 rounded border flex-shrink-0">
                           {command.agent}
                         </span>

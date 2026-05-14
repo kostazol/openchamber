@@ -59,8 +59,12 @@ const buildCommandsSignature = (commands: Command[]): string => {
     .join('||');
 };
 
-const getRequestDirectory = (): string | null => {
+const getRequestDirectory = (directoryOverride?: string | null): string | null => {
   try {
+    if (directoryOverride?.trim()) {
+      return directoryOverride.trim();
+    }
+
     const currentDirectory = useDirectoryStore.getState().currentDirectory;
     if (currentDirectory?.trim()) {
       return currentDirectory.trim();
@@ -110,7 +114,7 @@ interface CommandsStore {
 
   setSelectedCommand: (name: string | null) => void;
   setCommandDraft: (draft: CommandDraft | null) => void;
-  loadCommands: () => Promise<boolean>;
+  loadCommands: (directoryOverride?: string | null) => Promise<boolean>;
   createCommand: (config: CommandConfig) => Promise<boolean>;
   updateCommand: (name: string, config: Partial<CommandConfig>) => Promise<boolean>;
   deleteCommand: (name: string) => Promise<boolean>;
@@ -141,8 +145,8 @@ export const useCommandsStore = create<CommandsStore>()(
           set({ commandDraft: draft });
         },
 
-        loadCommands: async () => {
-          const directory = getRequestDirectory();
+        loadCommands: async (directoryOverride) => {
+          const directory = getRequestDirectory(directoryOverride);
           const cacheKey = getCommandsCacheKey(directory);
           const now = Date.now();
           const loadedAt = commandsLastLoadedAt.get(cacheKey) ?? 0;
