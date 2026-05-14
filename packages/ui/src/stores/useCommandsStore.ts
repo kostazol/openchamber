@@ -9,6 +9,7 @@ import {
 } from "@/lib/configUpdate";
 import { emitConfigChange, scopeMatches, subscribeToConfigChanges } from "@/lib/configSync";
 import { getSafeStorage } from "./utils/safeStorage";
+import { useDirectoryStore } from "@/stores/useDirectoryStore";
 import { useProjectsStore } from "@/stores/useProjectsStore";
 
 
@@ -60,18 +61,22 @@ const buildCommandsSignature = (commands: Command[]): string => {
 
 const getRequestDirectory = (): string | null => {
   try {
-    const projectsStore = useProjectsStore.getState();
-    const activeProject = projectsStore.getActiveProject?.();
-    
-    // 1. Primary: Active project path from store
-    if (activeProject?.path?.trim()) {
-      return activeProject.path.trim();
+    const currentDirectory = useDirectoryStore.getState().currentDirectory;
+    if (currentDirectory?.trim()) {
+      return currentDirectory.trim();
     }
 
-    // 2. Fallback: current OpenCode directory (session / runtime)
     const clientDir = opencodeClient.getDirectory();
     if (clientDir?.trim()) {
       return clientDir.trim();
+    }
+
+    const projectsStore = useProjectsStore.getState();
+    const activeProject = projectsStore.getActiveProject?.();
+
+    // Fallback: active project path when no explicit directory context exists.
+    if (activeProject?.path?.trim()) {
+      return activeProject.path.trim();
     }
   } catch (err) {
     console.warn('[CommandsStore] Error resolving config directory:', err);
