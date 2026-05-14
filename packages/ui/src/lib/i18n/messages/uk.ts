@@ -1371,7 +1371,7 @@ export const dict: Record<I18nKey, string> = {
   "chat.commandAutocomplete.tabs.untagged": "Інше",
   "chat.commandAutocomplete.tabs.skills": "Навички",
   "chat.commandAutocomplete.tabs.commands": "Команди",
-  "chat.autocomplete.keyboardHint": "↑↓ навігація • Enter вибрати • Esc закрити",
+  "chat.autocomplete.keyboardHint": "←↑↓→ навігація • Enter вибрати • Esc закрити",
   "chat.commandAutocomplete.command.initDescription": "Створити або оновити файл AGENTS.md",
   "chat.commandAutocomplete.command.undoDescription": "Скасувати останнє повідомлення",
   "chat.commandAutocomplete.command.redoDescription": "Повторити раніше скасовані повідомлення",

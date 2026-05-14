@@ -1405,7 +1405,7 @@ export const dict = {
   'chat.commandAutocomplete.tabs.untagged': 'Other',
   'chat.commandAutocomplete.tabs.skills': 'Skills',
   'chat.commandAutocomplete.tabs.commands': 'Commands',
-  'chat.autocomplete.keyboardHint': '↑↓ navigate • Enter select • Esc close',
+  'chat.autocomplete.keyboardHint': '←↑↓→ navigate • Enter select • Esc close',
   'chat.commandAutocomplete.command.initDescription': 'Create/update AGENTS.md file',
   'chat.commandAutocomplete.command.undoDescription': 'Undo the last message',
   'chat.commandAutocomplete.command.redoDescription': 'Redo previously undone messages',

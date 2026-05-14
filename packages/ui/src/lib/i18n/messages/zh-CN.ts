@@ -1371,7 +1371,7 @@ export const dict: Record<I18nKey, string> = {
   'chat.commandAutocomplete.tabs.untagged': '其他',
   'chat.commandAutocomplete.tabs.skills': '技能',
   'chat.commandAutocomplete.tabs.commands': '命令',
-  'chat.autocomplete.keyboardHint': '↑↓ 导航 • Enter 选择 • Esc 关闭',
+  'chat.autocomplete.keyboardHint': '←↑↓→ 导航 • Enter 选择 • Esc 关闭',
   'chat.commandAutocomplete.command.initDescription': '创建/更新 AGENTS.md 文件',
   'chat.commandAutocomplete.command.undoDescription': '撤销上一条消息',
   'chat.commandAutocomplete.command.redoDescription': '重做之前撤销的消息',

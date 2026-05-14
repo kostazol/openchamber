@@ -1407,7 +1407,7 @@ export const dict: Record<I18nKey, string> = {
   'chat.commandAutocomplete.tabs.untagged': '기타',
   'chat.commandAutocomplete.tabs.skills': '스킬',
   'chat.commandAutocomplete.tabs.commands': '명령',
-  'chat.autocomplete.keyboardHint': '↑↓ 이동 • Enter 선택 • Esc 닫기',
+  'chat.autocomplete.keyboardHint': '←↑↓→ 이동 • Enter 선택 • Esc 닫기',
   'chat.commandAutocomplete.command.initDescription': 'AGENTS.md 파일 생성/업데이트',
   'chat.commandAutocomplete.command.undoDescription': '마지막 메시지 실행 취소',
   'chat.commandAutocomplete.command.redoDescription': '이전에 실행 취소한 메시지 다시 실행',

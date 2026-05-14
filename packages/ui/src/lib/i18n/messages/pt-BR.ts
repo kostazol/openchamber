@@ -1371,7 +1371,7 @@ export const dict: Record<I18nKey, string> = {
   "chat.commandAutocomplete.tabs.untagged": "Outros",
   "chat.commandAutocomplete.tabs.skills": "Skills",
   "chat.commandAutocomplete.tabs.commands": "Comandos",
-  "chat.autocomplete.keyboardHint": "↑↓ navegar • Enter selecionar • Esc fechar",
+  "chat.autocomplete.keyboardHint": "←↑↓→ navegar • Enter selecionar • Esc fechar",
   "chat.commandAutocomplete.command.initDescription": "Criar/atualizar o arquivo AGENTS.md",
   "chat.commandAutocomplete.command.undoDescription": "Desfazer a última mensagem",
   "chat.commandAutocomplete.command.redoDescription": "Refazer mensagens desfeitas anteriormente",

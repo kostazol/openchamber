@@ -462,7 +462,7 @@ export const dict: Record<I18nKey, string> = {
   'chat.commandAutocomplete.tabs.untagged': 'Inne',
   'chat.commandAutocomplete.tabs.skills': 'Umiejętności',
   'chat.commandAutocomplete.tabs.commands': 'Polecenia',
-  'chat.autocomplete.keyboardHint': '↑↓ nawigacja • Enter wybierz • Esc zamknij',
+  'chat.autocomplete.keyboardHint': '←↑↓→ nawigacja • Enter wybierz • Esc zamknij',
   'chat.commandAutocomplete.command.initDescription': 'Utwórz/zaktualizuj plik AGENTS.md',
   'chat.commandAutocomplete.command.undoDescription': 'Cofnij ostatnią wiadomość',
   'chat.commandAutocomplete.command.redoDescription': 'Ponów poprzednio cofnięte wiadomości',
