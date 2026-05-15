@@ -11,7 +11,7 @@ import { Icon } from "@/components/icon/Icon";
 import { useI18n } from '@/lib/i18n';
 
 type CommandSource = 'openchamber' | 'opencode';
-type CommandCategoryFilter = 'all' | 'commands' | 'projectCommands' | 'projectSkills' | 'skills';
+type CommandCategoryFilter = 'all' | 'commands' | 'projectCommands' | 'projectSkills' | 'skills' | 'system' | 'openchamber';
 
 export interface CommandInfo {
   id: string;
@@ -56,6 +56,14 @@ const getCommandCategory = (command: CommandInfo): Exclude<CommandCategoryFilter
 const matchesCommandCategory = (command: CommandInfo, filter: CommandCategoryFilter): boolean => {
   if (filter === 'all') {
     return true;
+  }
+
+  if (filter === 'system') {
+    return command.isBuiltIn === true;
+  }
+
+  if (filter === 'openchamber') {
+    return command.isOpenChamber === true;
   }
 
   return getCommandCategory(command) === filter;
@@ -149,9 +157,11 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const commandCategoryOptions = React.useMemo(() => {
     const scopedOptions = [
       { id: 'commands' as const, label: t('chat.commandAutocomplete.tabs.commands') },
+      { id: 'openchamber' as const, label: t('chat.commandAutocomplete.tabs.openchamber') },
       { id: 'projectCommands' as const, label: t('chat.commandAutocomplete.tabs.projectCommands') },
       { id: 'projectSkills' as const, label: t('chat.commandAutocomplete.tabs.projectSkills') },
       { id: 'skills' as const, label: t('chat.commandAutocomplete.tabs.skills') },
+      { id: 'system' as const, label: t('chat.commandAutocomplete.tabs.system') },
     ].sort((a, b) => a.label.localeCompare(b.label));
 
     return [
@@ -479,7 +489,13 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
             {commands.map((command, index) => {
               const tagBadges = getCommandTagBadges(command, t);
 
-              const visibleTagBadges = tagBadges.filter((badge) => badge.id !== commandCategoryFilter);
+              const visibleTagBadges = tagBadges.filter((badge) => {
+                if (commandCategoryFilter === 'skills' || commandCategoryFilter === 'projectSkills') {
+                  return badge.id !== 'skill';
+                }
+
+                return badge.id !== commandCategoryFilter;
+              });
                 
               return (
                 <div
