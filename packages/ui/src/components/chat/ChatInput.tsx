@@ -3624,9 +3624,6 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({ onOpenSettings, scrollTo
                             ref={commandRef}
                             searchQuery={commandQuery}
                             onCommandSelect={handleCommandSelect}
-                            showTabs={isMobile}
-                            activeTab={autocompleteTab}
-                            onTabSelect={handleAutocompleteTabSelect}
                             onClose={() => setShowCommandAutocomplete(false)}
                             style={isDesktopExpanded && autocompleteOverlayPosition
                                 ? {

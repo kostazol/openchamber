@@ -28,7 +28,6 @@ export interface CommandAutocompleteHandle {
   handleKeyDown: (key: string) => void;
 }
 
-type AutocompleteTab = 'commands' | 'agents' | 'files';
 type TranslateFn = ReturnType<typeof useI18n>['t'];
 
 const hasCommandTag = (command: CommandInfo, filter: Exclude<CommandCategoryFilter, 'all'>): boolean => {
@@ -115,19 +114,13 @@ interface CommandAutocompleteProps {
   searchQuery: string;
   onCommandSelect: (command: CommandInfo, options?: { dismissKeyboard?: boolean }) => void;
   onClose: () => void;
-  showTabs?: boolean;
-  activeTab?: AutocompleteTab;
-  onTabSelect?: (tab: AutocompleteTab) => void;
   style?: React.CSSProperties;
 }
 
-export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, CommandAutocompleteProps>(({
+export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, CommandAutocompleteProps>(({ 
   searchQuery,
   onCommandSelect,
   onClose,
-  showTabs,
-  activeTab = 'commands',
-  onTabSelect,
   style,
 }, ref) => {
   const { t } = useI18n();
@@ -153,7 +146,6 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const ignoreClickRef = React.useRef(false);
   const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const pointerMovedRef = React.useRef(false);
-  const ignoreTabClickRef = React.useRef(false);
 
   const commandCategoryOptions = React.useMemo(() => ([
     { id: 'all' as const, label: t('chat.commandAutocomplete.tabs.all') },
@@ -391,46 +383,6 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
       className="absolute z-[100] min-w-0 w-full max-w-[450px] max-h-64 bg-background border-2 border-border/60 rounded-xl shadow-none bottom-full mb-2 left-0 flex flex-col"
       style={style}
     >
-      {showTabs ? (
-        <div className="px-2 pt-2 pb-1 border-b border-border/60">
-          <div className="flex items-center gap-1 rounded-lg bg-[var(--surface-elevated)] p-1">
-            {([
-              { id: 'commands' as const, label: t('chat.autocomplete.tabs.commands') },
-              { id: 'agents' as const, label: t('chat.autocomplete.tabs.agents') },
-              { id: 'files' as const, label: t('chat.autocomplete.tabs.files') },
-            ]).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                className={cn(
-                  'flex-1 px-2.5 py-1 rounded-md typography-meta font-semibold transition-none',
-                  activeTab === tab.id
-                    ? 'bg-interactive-selection text-interactive-selection-foreground shadow-none'
-                    : 'text-muted-foreground hover:bg-interactive-hover/50'
-                )}
-                onPointerDown={(event) => {
-                  if (event.pointerType !== 'touch') {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  ignoreTabClickRef.current = true;
-                  onTabSelect?.(tab.id);
-                }}
-                onClick={() => {
-                  if (ignoreTabClickRef.current) {
-                    ignoreTabClickRef.current = false;
-                    return;
-                  }
-                  onTabSelect?.(tab.id);
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
       <div className="px-2 pt-2 pb-1 border-b border-border/60">
         <div className="relative">
           <button
@@ -474,7 +426,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
           ) : null}
         </div>
       </div>
-      <ScrollableOverlay outerClassName="flex-1 min-h-0" className="px-0 pb-2">
+      <ScrollableOverlay outerClassName="flex-1 min-h-[8.5rem]" className="px-0 pb-2">
         {loading ? (
           <div className="flex items-center justify-center py-4">
             <Icon name="refresh" className="h-4 w-4 animate-spin text-muted-foreground" />
