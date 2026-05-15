@@ -4,6 +4,7 @@ import { useSessionUIStore } from '@/sync/session-ui-store';
 import { useSessionMessages } from '@/sync/sync-context';
 import { useCommandsStore } from '@/stores/useCommandsStore';
 import { useSkillsStore } from '@/stores/useSkillsStore';
+import { useUIStore } from '@/stores/useUIStore';
 import { ScrollableOverlay } from '@/components/ui/ScrollableOverlay';
 import { Icon } from "@/components/icon/Icon";
 import { useI18n } from '@/lib/i18n';
@@ -131,6 +132,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const hasSession = Boolean(currentSessionId);
   const hasNewSessionDraft = useSessionUIStore((state) => Boolean(state.newSessionDraft?.open));
   const canStartSessionCommand = hasSession || hasNewSessionDraft;
+  const isMobile = useUIStore((state) => state.isMobile);
 
   const [commands, setCommands] = React.useState<CommandInfo[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -146,6 +148,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const ignoreClickRef = React.useRef(false);
   const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const pointerMovedRef = React.useRef(false);
+  const [mobilePopupHeight, setMobilePopupHeight] = React.useState<number | null>(null);
 
   const commandCategoryOptions = React.useMemo(() => ([
     { id: 'all' as const, label: t('chat.commandAutocomplete.tabs.all') },
@@ -183,6 +186,34 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
       document.removeEventListener('pointerdown', handlePointerDown, true);
     };
   }, [onClose]);
+
+  React.useLayoutEffect(() => {
+    if (!isMobile) {
+      setMobilePopupHeight(null);
+      return;
+    }
+
+    const updateMobilePopupHeight = () => {
+      if (!containerRef.current) {
+        return;
+      }
+
+      const rootStyle = window.getComputedStyle(document.documentElement);
+      const headerHeight = Number.parseFloat(rootStyle.getPropertyValue('--oc-header-height')) || 56;
+      const safeAreaTop = Number.parseFloat(rootStyle.getPropertyValue('--oc-safe-area-top')) || 0;
+      const popupBottom = containerRef.current.getBoundingClientRect().bottom;
+      const availableHeight = Math.max(0, popupBottom - headerHeight - safeAreaTop - 8);
+
+      setMobilePopupHeight((current) => current === availableHeight ? current : availableHeight);
+    };
+
+    updateMobilePopupHeight();
+    window.addEventListener('resize', updateMobilePopupHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateMobilePopupHeight);
+    };
+  }, [isMobile, commands.length, loading]);
 
   React.useEffect(() => {
     // Force refresh to get latest project context when mounting
@@ -380,8 +411,17 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   return (
     <div
       ref={containerRef}
-      className="absolute z-[100] min-w-0 w-full max-w-[450px] h-64 max-h-64 bg-background border-2 border-border/60 rounded-xl shadow-none bottom-full mb-2 left-0 flex flex-col"
-      style={style}
+      className={cn(
+        'absolute z-[100] min-w-0 w-full max-w-[450px] bg-background border-2 border-border/60 rounded-xl shadow-none bottom-full mb-2 left-0 flex flex-col',
+        isMobile ? 'max-h-none' : 'h-64 max-h-64'
+      )}
+      style={isMobile
+        ? {
+            ...style,
+            height: mobilePopupHeight ? `${mobilePopupHeight}px` : undefined,
+            maxHeight: mobilePopupHeight ? `${mobilePopupHeight}px` : undefined,
+          }
+        : style}
     >
       <div className="px-2 pt-2 pb-1 border-b border-border/60">
         <div className="relative">
