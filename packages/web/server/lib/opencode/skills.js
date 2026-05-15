@@ -255,7 +255,7 @@ function getSkillSources(skillName, workingDirectory, discoveredSkill = null) {
     mdScope = SKILL_SCOPE.USER;
     mdSource = 'opencode';
     mdDir = userDir;
-  } else if (matchedDiscovered?.path) {
+  } else if (matchedDiscovered?.path && fs.existsSync(matchedDiscovered.path)) {
     mdPath = matchedDiscovered.path;
     mdScope = matchedDiscovered.scope || null;
     mdSource = matchedDiscovered.source || null;

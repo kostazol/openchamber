@@ -3,6 +3,7 @@ import { cn, fuzzyMatch } from '@/lib/utils';
 import { useSessionUIStore } from '@/sync/session-ui-store';
 import { useSessionMessages } from '@/sync/sync-context';
 import { useCommandsStore } from '@/stores/useCommandsStore';
+import type { SkillScope } from '@/stores/useSkillsStore';
 import { useSkillsStore } from '@/stores/useSkillsStore';
 import { useUIStore } from '@/stores/useUIStore';
 import { ScrollableOverlay } from '@/components/ui/ScrollableOverlay';
@@ -10,7 +11,7 @@ import { Icon } from "@/components/icon/Icon";
 import { useI18n } from '@/lib/i18n';
 
 type CommandSource = 'openchamber' | 'opencode';
-type CommandCategoryFilter = 'all' | 'general' | 'skill' | 'system' | 'openchamber' | 'user' | 'project' | 'untagged';
+type CommandCategoryFilter = 'all' | 'commands' | 'projectCommands' | 'projectSkills' | 'skills';
 
 export interface CommandInfo {
   id: string;
@@ -23,6 +24,7 @@ export interface CommandInfo {
   isOpenChamber?: boolean;
   isSkill?: boolean;
   scope?: string;
+  skillScope?: SkillScope;
 }
 
 export interface CommandAutocompleteHandle {
@@ -31,32 +33,24 @@ export interface CommandAutocompleteHandle {
 
 type TranslateFn = ReturnType<typeof useI18n>['t'];
 
-const hasCommandTag = (command: CommandInfo, filter: Exclude<CommandCategoryFilter, 'all'>): boolean => {
-  if (filter === 'skill') {
-    return command.isSkill === true;
+const getCommandCategory = (command: CommandInfo): Exclude<CommandCategoryFilter, 'all'> | null => {
+  if (command.isSkill === true && command.skillScope === 'project') {
+    return 'projectSkills';
   }
 
-  if (filter === 'general') {
-    return command.agent === 'general';
+  if (command.isSkill === true && command.skillScope === 'user') {
+    return 'skills';
   }
 
-  if (filter === 'system') {
-    return command.isBuiltIn === true;
+  if (command.isSkill !== true && command.scope === 'project') {
+    return 'projectCommands';
   }
 
-  if (filter === 'openchamber') {
-    return command.isOpenChamber === true;
+  if (command.isSkill !== true && command.scope === 'user') {
+    return 'commands';
   }
 
-  if (filter === 'user') {
-    return command.scope === 'user';
-  }
-
-  if (filter === 'project') {
-    return command.scope === 'project';
-  }
-
-  return command.isSkill !== true && command.isBuiltIn !== true && command.isOpenChamber !== true && command.scope !== 'user' && command.scope !== 'project' && command.agent !== 'general';
+  return null;
 };
 
 const matchesCommandCategory = (command: CommandInfo, filter: CommandCategoryFilter): boolean => {
@@ -64,11 +58,11 @@ const matchesCommandCategory = (command: CommandInfo, filter: CommandCategoryFil
     return true;
   }
 
-  return hasCommandTag(command, filter);
+  return getCommandCategory(command) === filter;
 };
 
 interface CommandTagBadge {
-  id: Exclude<CommandCategoryFilter, 'all'>;
+  id: string;
   label: string;
   className?: string;
   style?: React.CSSProperties;
@@ -150,16 +144,21 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   const pointerMovedRef = React.useRef(false);
   const [mobilePopupHeight, setMobilePopupHeight] = React.useState<number | null>(null);
 
-  const commandCategoryOptions = React.useMemo(() => ([
-    { id: 'all' as const, label: t('chat.commandAutocomplete.tabs.all') },
-    { id: 'general' as const, label: t('chat.commandAutocomplete.tabs.general') },
-    { id: 'openchamber' as const, label: t('chat.commandAutocomplete.tabs.openchamber') },
-    { id: 'project' as const, label: t('chat.commandAutocomplete.tabs.project') },
-    { id: 'skill' as const, label: t('chat.commandAutocomplete.tabs.skill') },
-    { id: 'system' as const, label: t('chat.commandAutocomplete.tabs.system') },
-    { id: 'untagged' as const, label: t('chat.commandAutocomplete.tabs.untagged') },
-    { id: 'user' as const, label: t('chat.commandAutocomplete.tabs.user') },
-  ]).sort((a, b) => a.label.localeCompare(b.label)), [t]);
+  const skillsByName = React.useMemo(() => new Map(skills.map((skill) => [skill.name, skill])), [skills]);
+
+  const commandCategoryOptions = React.useMemo(() => {
+    const scopedOptions = [
+      { id: 'commands' as const, label: t('chat.commandAutocomplete.tabs.commands') },
+      { id: 'projectCommands' as const, label: t('chat.commandAutocomplete.tabs.projectCommands') },
+      { id: 'projectSkills' as const, label: t('chat.commandAutocomplete.tabs.projectSkills') },
+      { id: 'skills' as const, label: t('chat.commandAutocomplete.tabs.skills') },
+    ].sort((a, b) => a.label.localeCompare(b.label));
+
+    return [
+      { id: 'all' as const, label: t('chat.commandAutocomplete.tabs.all') },
+      ...scopedOptions,
+    ];
+  }, [t]);
 
   const currentSessionDirectory = React.useMemo(() => {
     if (!currentSessionId) {
@@ -218,25 +217,29 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
   React.useEffect(() => {
     // Force refresh to get latest project context when mounting
     void refreshCommands(currentSessionDirectory);
-    void refreshSkills();
+    void refreshSkills(currentSessionDirectory);
   }, [currentSessionDirectory, refreshCommands, refreshSkills]);
 
   React.useEffect(() => {
     const loadCommands = async () => {
       setLoading(true);
       try {
-        const skillNames = new Set(skills.map((skill) => skill.name));
-        const customCommands: CommandInfo[] = commandsWithMetadata.map((cmd, index) => ({
-          id: `opencode:${cmd.scope ?? 'global'}:${cmd.name}:${cmd.agent ?? ''}:${cmd.model ?? ''}:${index}`,
-          name: cmd.name,
-          source: 'opencode',
-          description: cmd.description,
-          agent: cmd.agent ?? undefined,
-          model: cmd.model ?? undefined,
-          isBuiltIn: cmd.name === 'init' || cmd.name === 'review',
-          isSkill: skillNames.has(cmd.name),
-          scope: cmd.scope,
-        }));
+        const customCommands: CommandInfo[] = commandsWithMetadata.map((cmd, index) => {
+          const matchedSkill = skillsByName.get(cmd.name);
+
+          return {
+            id: `opencode:${cmd.scope ?? 'global'}:${cmd.name}:${cmd.agent ?? ''}:${cmd.model ?? ''}:${index}`,
+            name: cmd.name,
+            source: 'opencode',
+            description: cmd.description,
+            agent: cmd.agent ?? undefined,
+            model: cmd.model ?? undefined,
+            isBuiltIn: cmd.name === 'init' || cmd.name === 'review',
+            isSkill: Boolean(matchedSkill),
+            scope: cmd.scope,
+            skillScope: matchedSkill?.scope,
+          };
+        });
 
         const builtInCommands: CommandInfo[] = [
           ...(hasSession && !hasMessagesInCurrentSession
@@ -325,7 +328,7 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
     };
 
     loadCommands();
-  }, [searchQuery, hasMessagesInCurrentSession, hasSession, canStartSessionCommand, commandCategoryFilter, commandsWithMetadata, skills, t]);
+  }, [searchQuery, hasMessagesInCurrentSession, hasSession, canStartSessionCommand, commandCategoryFilter, commandsWithMetadata, skillsByName, t]);
 
   React.useEffect(() => {
     setSelectedIndex(0);

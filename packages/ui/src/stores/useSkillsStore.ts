@@ -11,7 +11,11 @@ import { getSafeStorage } from "./utils/safeStorage";
 
 import { opencodeClient } from '@/lib/opencode/client';
 
-const getCurrentDirectory = (): string | null => {
+const getCurrentDirectory = (directoryOverride?: string | null): string | null => {
+  if (directoryOverride?.trim()) {
+    return directoryOverride.trim();
+  }
+
   const opencodeDirectory = opencodeClient.getDirectory();
   if (typeof opencodeDirectory === 'string' && opencodeDirectory.trim().length > 0) {
     return opencodeDirectory;
@@ -134,7 +138,7 @@ interface SkillsStore {
 
   setSelectedSkill: (name: string | null) => void;
   setSkillDraft: (draft: SkillDraft | null) => void;
-  loadSkills: () => Promise<boolean>;
+  loadSkills: (directoryOverride?: string | null) => Promise<boolean>;
   getSkillDetail: (name: string) => Promise<SkillDetail | null>;
   createSkill: (config: SkillConfig) => Promise<boolean>;
   updateSkill: (name: string, config: Partial<SkillConfig>) => Promise<boolean>;
@@ -187,8 +191,8 @@ export const useSkillsStore = create<SkillsStore>()(
           set({ skillDraft: draft });
         },
 
-        loadSkills: async () => {
-          const currentDirectory = getCurrentDirectory();
+        loadSkills: async (directoryOverride) => {
+          const currentDirectory = getCurrentDirectory(directoryOverride);
           const cacheKey = getSkillsCacheKey(currentDirectory);
           const now = Date.now();
           const loadedAt = skillsLastLoadedAt.get(cacheKey) ?? 0;
