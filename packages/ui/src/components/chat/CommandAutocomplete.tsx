@@ -104,10 +104,10 @@ const getCommandTagBadges = (command: CommandInfo, t: TranslateFn): CommandTagBa
     badges.push({ id: 'system', label: t('chat.commandAutocomplete.badge.system'), className: 'bg-[var(--status-warning-background)] text-[var(--status-warning)] border-[var(--status-warning-border)]' });
   }
 
-  if (command.scope === 'project') {
-    badges.push({ id: 'project', label: command.scope, className: 'bg-[var(--status-info-background)] text-[var(--status-info)] border-[var(--status-info-border)]' });
-  } else if (command.scope === 'user') {
-    badges.push({ id: 'user', label: command.scope, className: 'bg-[var(--status-success-background)] text-[var(--status-success)] border-[var(--status-success-border)]' });
+  const effectiveScope = command.isSkill === true ? command.skillScope : command.scope;
+
+  if (effectiveScope === 'project') {
+    badges.push({ id: 'project', label: 'project', className: 'bg-[var(--status-info-background)] text-[var(--status-info)] border-[var(--status-info-border)]' });
   }
 
   return badges;
@@ -491,7 +491,15 @@ export const CommandAutocomplete = React.forwardRef<CommandAutocompleteHandle, C
 
               const visibleTagBadges = tagBadges.filter((badge) => {
                 if (commandCategoryFilter === 'skills' || commandCategoryFilter === 'projectSkills') {
-                  return badge.id !== 'skill';
+                  if (badge.id === 'skill') {
+                    return false;
+                  }
+                }
+
+                if (commandCategoryFilter === 'projectCommands' || commandCategoryFilter === 'projectSkills') {
+                  if (badge.id === 'project') {
+                    return false;
+                  }
                 }
 
                 return badge.id !== commandCategoryFilter;
